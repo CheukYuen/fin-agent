@@ -1,0 +1,340 @@
+---
+alwaysApply: true
+---
+
+# Python 3.11 初学者开发规范
+
+## 🎯 核心原则
+- **简单优先**: 先让代码跑起来，再优化
+- **类型安全**: 所有函数都要有类型注解
+- **错误处理**: 每个 API 都要处理可能的错误
+- **文档清晰**: 代码即文档，注释要简洁明了
+
+## 📁 项目结构 (必须掌握)
+```
+app/
+├── main.py          # 程序入口
+├── api_router.py    # API 路由
+├── config.py        # 配置管理
+├── models/
+│   └── schema.py    # 数据模型 (Pydantic)
+└── services/
+    ├── llm_service.py    # AI 服务
+    └── redis_service.py  # 数据存储
+```
+
+## 🐍 Python 基础规范
+
+### 1. 类型注解 (必须)
+```python
+# ✅ 正确
+def get_user(user_id: int) -> dict[str, str]:
+    return {"id": str(user_id), "name": "张三"}
+
+# ❌ 错误
+def get_user(user_id):
+    return {"id": user_id, "name": "张三"}
+```
+
+### 2. 异步函数 (FastAPI 必须)
+```python
+# ✅ 正确
+async def chat_endpoint(request: ChatRequest) -> ChatResponse:
+    result = await process_message(request.message)
+    return ChatResponse(message=result)
+
+# ❌ 错误
+def chat_endpoint(request: ChatRequest) -> ChatResponse:
+    result = process_message(request.message)  # 没有 await
+    return ChatResponse(message=result)
+```
+
+### 3. 错误处理 (必须)
+```python
+# ✅ 正确
+async def get_user(user_id: int) -> dict[str, str]:
+    if user_id <= 0:
+        raise HTTPException(status_code=400, detail="用户ID必须大于0")
+    return {"id": str(user_id), "name": "张三"}
+
+# ❌ 错误
+async def get_user(user_id: int) -> dict[str, str]:
+    return {"id": str(user_id), "name": "张三"}  # 没有验证
+```
+
+## 📋 Pydantic 模型 (核心)
+
+### 基本模型
+```python
+from pydantic import BaseModel, Field
+
+class ChatRequest(BaseModel):
+    session_id: str = Field(..., description="会话ID")
+    message: str = Field(..., description="用户消息", min_length=1)
+    temperature: float = Field(default=0.7, description="生成温度")
+```
+
+### 响应模型
+```python
+class ChatResponse(BaseModel):
+    message: str = Field(..., description="AI 回复")
+    session_id: str = Field(..., description="会话ID")
+```
+
+## 🔧 开发流程 (按顺序)
+
+### 1. 写模型 (schema.py)
+```python
+# 先定义数据结构
+class YourRequest(BaseModel):
+    field1: str = Field(..., description="字段1")
+    field2: int = Field(default=0, description="字段2")
+```
+
+### 2. 写服务 (services/)
+```python
+# 再写业务逻辑
+async def your_service(data: YourRequest) -> str:
+    # 处理逻辑
+    return "处理结果"
+```
+
+### 3. 写路由 (api_router.py)
+```python
+# 最后写 API 接口
+@router.post("/your-endpoint")
+async def your_endpoint(request: YourRequest) -> dict[str, str]:
+    result = await your_service(request)
+    return {"result": result}
+```
+
+### 4. 测试 (必须)
+```python
+# 测试你的 API
+def test_your_endpoint():
+    response = client.post("/your-endpoint", json={"field1": "test"})
+    assert response.status_code == 200
+```
+
+## ⚠️ 常见错误 (避免)
+
+### 1. 忘记类型注解
+```python
+# ❌ 错误
+def process_data(data):
+    return data.upper()
+
+# ✅ 正确
+def process_data(data: str) -> str:
+    return data.upper()
+```
+
+### 2. 忘记异步
+```python
+# ❌ 错误
+def chat_endpoint(request: ChatRequest):
+    return {"message": "hello"}
+
+# ✅ 正确
+async def chat_endpoint(request: ChatRequest):
+    return {"message": "hello"}
+```
+
+### 3. 忘记错误处理
+```python
+# ❌ 错误
+async def get_user(user_id: int):
+    user = database.get_user(user_id)  # 可能失败
+    return user
+
+# ✅ 正确
+async def get_user(user_id: int):
+    try:
+        user = await database.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="服务器错误")
+```
+
+## 🚀 快速开始
+1. `source .venv/bin/activate`  # 激活环境
+2. `pip install -r requirements.txt`  # 安装依赖
+3. `uvicorn app.main:app --reload`  # 启动服务
+4. 访问 `http://localhost:8000/docs`  # 查看文档
+
+## 💡 学习建议
+- **先模仿**: 复制现有代码，理解结构
+- **再修改**: 小步修改，测试验证
+- **后创新**: 掌握基础后，尝试新功能
+- **多测试**: 每写一个功能，都要测试
+
+# Python 3.11 初学者开发规范
+
+## 🎯 核心原则
+- **简单优先**: 先让代码跑起来，再优化
+- **类型安全**: 所有函数都要有类型注解
+- **错误处理**: 每个 API 都要处理可能的错误
+- **文档清晰**: 代码即文档，注释要简洁明了
+
+## 📁 项目结构 (必须掌握)
+```
+app/
+├── main.py          # 程序入口
+├── api_router.py    # API 路由
+├── config.py        # 配置管理
+├── models/
+│   └── schema.py    # 数据模型 (Pydantic)
+└── services/
+    ├── llm_service.py    # AI 服务
+    └── redis_service.py  # 数据存储
+```
+
+## 🐍 Python 基础规范
+
+### 1. 类型注解 (必须)
+```python
+# ✅ 正确
+def get_user(user_id: int) -> dict[str, str]:
+    return {"id": str(user_id), "name": "张三"}
+
+# ❌ 错误
+def get_user(user_id):
+    return {"id": user_id, "name": "张三"}
+```
+
+### 2. 异步函数 (FastAPI 必须)
+```python
+# ✅ 正确
+async def chat_endpoint(request: ChatRequest) -> ChatResponse:
+    result = await process_message(request.message)
+    return ChatResponse(message=result)
+
+# ❌ 错误
+def chat_endpoint(request: ChatRequest) -> ChatResponse:
+    result = process_message(request.message)  # 没有 await
+    return ChatResponse(message=result)
+```
+
+### 3. 错误处理 (必须)
+```python
+# ✅ 正确
+async def get_user(user_id: int) -> dict[str, str]:
+    if user_id <= 0:
+        raise HTTPException(status_code=400, detail="用户ID必须大于0")
+    return {"id": str(user_id), "name": "张三"}
+
+# ❌ 错误
+async def get_user(user_id: int) -> dict[str, str]:
+    return {"id": str(user_id), "name": "张三"}  # 没有验证
+```
+
+## 📋 Pydantic 模型 (核心)
+
+### 基本模型
+```python
+from pydantic import BaseModel, Field
+
+class ChatRequest(BaseModel):
+    session_id: str = Field(..., description="会话ID")
+    message: str = Field(..., description="用户消息", min_length=1)
+    temperature: float = Field(default=0.7, description="生成温度")
+```
+
+### 响应模型
+```python
+class ChatResponse(BaseModel):
+    message: str = Field(..., description="AI 回复")
+    session_id: str = Field(..., description="会话ID")
+```
+
+## 🔧 开发流程 (按顺序)
+
+### 1. 写模型 (schema.py)
+```python
+# 先定义数据结构
+class YourRequest(BaseModel):
+    field1: str = Field(..., description="字段1")
+    field2: int = Field(default=0, description="字段2")
+```
+
+### 2. 写服务 (services/)
+```python
+# 再写业务逻辑
+async def your_service(data: YourRequest) -> str:
+    # 处理逻辑
+    return "处理结果"
+```
+
+### 3. 写路由 (api_router.py)
+```python
+# 最后写 API 接口
+@router.post("/your-endpoint")
+async def your_endpoint(request: YourRequest) -> dict[str, str]:
+    result = await your_service(request)
+    return {"result": result}
+```
+
+### 4. 测试 (必须)
+```python
+# 测试你的 API
+def test_your_endpoint():
+    response = client.post("/your-endpoint", json={"field1": "test"})
+    assert response.status_code == 200
+```
+
+## ⚠️ 常见错误 (避免)
+
+### 1. 忘记类型注解
+```python
+# ❌ 错误
+def process_data(data):
+    return data.upper()
+
+# ✅ 正确
+def process_data(data: str) -> str:
+    return data.upper()
+```
+
+### 2. 忘记异步
+```python
+# ❌ 错误
+def chat_endpoint(request: ChatRequest):
+    return {"message": "hello"}
+
+# ✅ 正确
+async def chat_endpoint(request: ChatRequest):
+    return {"message": "hello"}
+```
+
+### 3. 忘记错误处理
+```python
+# ❌ 错误
+async def get_user(user_id: int):
+    user = database.get_user(user_id)  # 可能失败
+    return user
+
+# ✅ 正确
+async def get_user(user_id: int):
+    try:
+        user = await database.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="服务器错误")
+```
+
+## 🚀 快速开始
+1. `source .venv/bin/activate`  # 激活环境
+2. `pip install -r requirements.txt`  # 安装依赖
+3. `uvicorn app.main:app --reload`  # 启动服务
+4. 访问 `http://localhost:8000/docs`  # 查看文档
+
+## 💡 学习建议
+- **先模仿**: 复制现有代码，理解结构
+- **再修改**: 小步修改，测试验证
+- **后创新**: 掌握基础后，尝试新功能
+- **多测试**: 每写一个功能，都要测试
+
